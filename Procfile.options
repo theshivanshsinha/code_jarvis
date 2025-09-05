@@ -1,16 +1,19 @@
-# Alternative deployment commands for Render
+# Multiple deployment options for Render - TRY THESE IN ORDER:
 
-# Option 1: Simple Python startup (RECOMMENDED)
+# Option 1: Ultra-simple server (RECOMMENDED)
+web: python server.py
+
+# Option 2: Waitress production server  
+web: python simple_server.py
+
+# Option 3: Direct app execution
+web: python app.py
+
+# Option 4: Render diagnostics version
 web: python render_start.py
 
-# Option 2: Gunicorn with config file
-# web: gunicorn app:app -c gunicorn.conf.py
+# Option 5: Gunicorn (if other options fail)
+web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
 
-# Option 3: Gunicorn with inline config
-# web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
-
-# Option 4: Direct app.py execution
-# web: python app.py
-
-# Option 5: Alternative startup script
-# web: python startup.py
+# Option 6: Gunicorn with config
+web: gunicorn app:app -c gunicorn.conf.py

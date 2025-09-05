@@ -1,1 +1,1 @@
-web: python render_start.py
+web: python simple_server.py
