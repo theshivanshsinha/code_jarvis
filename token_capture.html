@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeJarvis - Token Capture</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .token-box { 
+            background: #f8f9fa; 
+            border: 1px solid #e9ecef; 
+            border-radius: 4px; 
+            padding: 15px; 
+            margin: 20px 0; 
+            word-break: break-all;
+            font-family: monospace;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .instructions { 
+            background: #e3f2fd; 
+            border-left: 4px solid #2196f3; 
+            padding: 15px; 
+            margin: 20px 0;
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .copy-btn { background: #28a745; }
+        .copy-btn:hover { background: #1e7e34; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 CodeJarvis OAuth Token Capture</h1>
+        
+        <div id="status" class="token-box">
+            ⏳ Checking for authentication token...
+        </div>
+        
+        <div id="tokenDisplay" style="display: none;">
+            <h3>✅ Authentication Successful!</h3>
+            <p>Your JWT token has been captured:</p>
+            <div id="tokenValue" class="token-box success"></div>
+            <button class="copy-btn" onclick="copyToken()">📋 Copy Token</button>
+            <button onclick="testToken()">🧪 Test Token</button>
+        </div>
+        
+        <div id="instructions" class="instructions">
+            <h3>📋 How to Use Your Token:</h3>
+            <p>Once you have your token, you can use it in API requests like this:</p>
+            <div class="token-box">
+curl -X POST http://127.0.0.1:5000/api/reminders \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Test Contest","start":"2025-09-05T10:00:00Z","url":"https://example.com"}'
+            </div>
+            
+            <p><strong>PowerShell version:</strong></p>
+            <div class="token-box">
+$headers = @{ Authorization = "Bearer YOUR_TOKEN_HERE" }
+$body = '{"title":"Test Contest","start":"2025-09-05T10:00:00Z","url":"https://example.com"}'
+Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/reminders" -Method POST -Headers $headers -ContentType "application/json" -Body $body
+            </div>
+        </div>
+        
+        <div id="startAuth" style="display: none;">
+            <h3>🚀 Start Authentication</h3>
+            <p>Click the button below to start the OAuth flow:</p>
+            <button onclick="startOAuth()">🔐 Login with Google</button>
+        </div>
+        
+        <div id="error" style="display: none;" class="token-box error">
+            <h3>❌ Authentication Failed</h3>
+            <p id="errorMessage"></p>
+            <button onclick="startOAuth()">🔄 Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        let capturedToken = null;
+        
+        function extractTokenFromUrl() {
+            const hash = window.location.hash;
+            if (hash && hash.includes('token=')) {
+                const tokenMatch = hash.match(/token=([^&]+)/);
+                return tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+            }
+            return null;
+        }
+        
+        function extractErrorFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                error: params.get('error'),
+                message: params.get('message')
+            };
+        }
+        
+        function displayToken(token) {
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('tokenDisplay').style.display = 'block';
+            document.getElementById('tokenValue').textContent = token;
+            capturedToken = token;
+            
+            // Store token in localStorage for later use
+            localStorage.setItem('codejarvis_token', token);
+        }
+        
+        function displayError(error, message) {
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorMessage').textContent = 
+                `Error: ${error}${message ? ` - ${message}` : ''}`;
+        }
+        
+        function showStartAuth() {
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('startAuth').style.display = 'block';
+        }
+        
+        function copyToken() {
+            if (capturedToken) {
+                navigator.clipboard.writeText(capturedToken).then(() => {
+                    alert('✅ Token copied to clipboard!');
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textarea = document.createElement('textarea');
+                    textarea.value = capturedToken;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alert('✅ Token copied to clipboard!');
+                });
+            }
+        }
+        
+        async function testToken() {
+            if (!capturedToken) return;
+            
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${capturedToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.user && data.user.email) {
+                    alert(`✅ Token is valid! Logged in as: ${data.user.email}`);
+                } else {
+                    alert('❌ Token appears to be invalid or expired.');
+                }
+            } catch (error) {
+                alert('❌ Error testing token: ' + error.message);
+            }
+        }
+        
+        function startOAuth() {
+            window.location.href = 'http://127.0.0.1:5000/api/auth/google/url';
+        }
+        
+        // Check for token or error on page load
+        window.onload = function() {
+            const token = extractTokenFromUrl();
+            const { error, message } = extractErrorFromUrl();
+            
+            if (token) {
+                displayToken(token);
+            } else if (error) {
+                displayError(error, message);
+            } else {
+                // Check if we have a stored token
+                const storedToken = localStorage.getItem('codejarvis_token');
+                if (storedToken) {
+                    displayToken(storedToken);
+                } else {
+                    showStartAuth();
+                }
+            }
+        };
+    </script>
+</body>
+</html>

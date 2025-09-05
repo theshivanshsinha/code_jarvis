@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem History Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: #fff;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .button {
+            background: #3B82F6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #2563EB;
+        }
+        .button:disabled {
+            background: #6B7280;
+            cursor: not-allowed;
+        }
+        .problem {
+            background: #1F2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .platform {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        .platform.codeforces { background: rgba(31, 138, 203, 0.2); color: #1F8ACB; }
+        .platform.leetcode { background: rgba(255, 161, 22, 0.2); color: #FFA116; }
+        .platform.atcoder { background: rgba(63, 127, 191, 0.2); color: #3F7FBF; }
+        .verdict {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        .verdict.ok { background: rgba(34, 197, 94, 0.2); color: #22C55E; }
+        .verdict.wrong { background: rgba(239, 68, 68, 0.2); color: #EF4444; }
+        .status {
+            background: #1F2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .log {
+            background: #000;
+            color: #0F0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Problem History API Test</h1>
+    
+    <div class="status">
+        <h3>Test Controls</h3>
+        <button class="button" onclick="testProblemHistory()" id="testBtn">Test Problem History API</button>
+        <button class="button" onclick="testDailyActivity()">Test Daily Activity API</button>
+        <button class="button" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="status">
+        <h3>Results</h3>
+        <div id="status">Ready to test...</div>
+    </div>
+
+    <div class="status">
+        <h3>Debug Log</h3>
+        <div class="log" id="log"></div>
+    </div>
+
+    <div id="problems-container"></div>
+
+    <script>
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        const problemsContainer = document.getElementById('problems-container');
+        const testBtn = document.getElementById('testBtn');
+
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.textContent += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+            console.log(message);
+        }
+
+        function setStatus(message) {
+            status.textContent = message;
+            addLog(`STATUS: ${message}`);
+        }
+
+        function clearResults() {
+            log.textContent = '';
+            problemsContainer.innerHTML = '';
+            setStatus('Cleared results');
+        }
+
+        async function testProblemHistory() {
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing...';
+            problemsContainer.innerHTML = '';
+            
+            setStatus('🔍 Testing Problem History API...');
+            
+            try {
+                const url = 'http://localhost:5000/api/stats/problems?limit=10&days=90';
+                addLog(`Making request to: ${url}`);
+                
+                const response = await fetch(url);
+                addLog(`Response status: ${response.status} ${response.statusText}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                addLog(`Response received with ${data.problems?.length || 0} problems`);
+                
+                if (data.problems && data.problems.length > 0) {
+                    setStatus(`✅ SUCCESS: Found ${data.problems.length} problems!`);
+                    displayProblems(data.problems);
+                } else {
+                    setStatus('⚠️ No problems returned from API');
+                    addLog('API response structure: ' + JSON.stringify(Object.keys(data), null, 2));
+                }
+                
+            } catch (error) {
+                setStatus(`❌ ERROR: ${error.message}`);
+                addLog(`ERROR: ${error.message}`);
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = 'Test Problem History API';
+            }
+        }
+
+        async function testDailyActivity() {
+            setStatus('🔍 Testing Daily Activity API...');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/stats/daily');
+                const data = await response.json();
+                
+                setStatus(`✅ Daily Activity: ${data.activeDays} active days, ${data.days.length} total days`);
+                addLog(`Daily activity data received: ${data.activeDays} active days`);
+                
+            } catch (error) {
+                setStatus(`❌ Daily Activity ERROR: ${error.message}`);
+                addLog(`Daily Activity ERROR: ${error.message}`);
+            }
+        }
+
+        function displayProblems(problems) {
+            problemsContainer.innerHTML = '<h3>📚 Problem History Results</h3>';
+            
+            problems.forEach((problem, index) => {
+                const problemDiv = document.createElement('div');
+                problemDiv.className = 'problem';
+                
+                const verdict = problem.verdict?.toUpperCase();
+                const verdictClass = verdict === 'OK' || verdict === 'AC' ? 'ok' : 'wrong';
+                
+                problemDiv.innerHTML = `
+                    <div>
+                        <span class="platform ${problem.platform}">${problem.platform.toUpperCase()}</span>
+                        <span class="verdict ${verdictClass}">${verdict || 'Unknown'}</span>
+                        <strong>${problem.title || problem.problemId || 'Unknown Problem'}</strong>
+                    </div>
+                    <div style="margin-top: 8px; font-size: 14px; color: #9CA3AF;">
+                        📅 ${new Date(problem.date).toLocaleString()} | 
+                        💻 ${problem.language || 'Unknown'} |
+                        ⭐ Rating: ${problem.rating || 'N/A'}
+                    </div>
+                    ${problem.tags && problem.tags.length > 0 ? 
+                        `<div style="margin-top: 8px;">
+                            ${problem.tags.map(tag => `<span style="background: #374151; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin-right: 5px;">${tag}</span>`).join('')}
+                        </div>` : ''
+                    }
+                    ${problem.url ? `<div style="margin-top: 8px;"><a href="${problem.url}" target="_blank" style="color: #3B82F6;">View Problem</a></div>` : ''}
+                `;
+                
+                problemsContainer.appendChild(problemDiv);
+            });
+        }
+
+        // Test on load
+        addLog('Test page loaded. Backend should be running on http://localhost:5000');
+        addLog('Click "Test Problem History API" to verify the fix works!');
+    </script>
+</body>
+</html>

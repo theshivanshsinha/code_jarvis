@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: codejarvis-backend
+    env: python
+    repo: https://github.com/yourusername/CodeJarvis # Update this with your repo
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    plan: free
+    envVars:
+      - key: FLASK_SECRET
+        generateValue: true
+      - key: CLIENT_ORIGIN
+        value: https://your-frontend-domain.onrender.com # Update this
+      - key: GOOGLE_REDIRECT_URI
+        value: https://your-backend-domain.onrender.com/api/auth/google/callback # Update this
+      - key: MONGODB_URI
+        value: # Add your MongoDB connection string if needed
+      - key: GOOGLE_CLIENT_ID
+        sync: false # Set to true and add the value
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false # Set to true and add the value
+      - key: SENDGRID_API_KEY
+        sync: false # Set to true and add the value if using SendGrid
+      - key: EMAIL_PASSWORD
+        sync: false # Set to true and add the value if using SMTP
+      - key: SMTP_USERNAME
+        sync: false # Set to true and add the value if using SMTP
+      - key: SMTP_PASSWORD
+        sync: false # Set to true and add the value if using SMTP

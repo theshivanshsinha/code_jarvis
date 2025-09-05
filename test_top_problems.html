@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Top Problems API Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: #fff;
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .button {
+        background: #3b82f6;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 10px 5px;
+      }
+      .button:hover {
+        background: #2563eb;
+      }
+      .button:disabled {
+        background: #6b7280;
+        cursor: not-allowed;
+      }
+      .test-section {
+        background: #1f2937;
+        border: 1px solid #374151;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+      }
+      .log {
+        background: #000;
+        color: #0f0;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .problem-card {
+        background: #374151;
+        border: 1px solid #4b5563;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 10px 0;
+      }
+      .platform {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-right: 10px;
+      }
+      .platform.leetcode {
+        background: rgba(255, 161, 22, 0.2);
+        color: #ffa116;
+      }
+      .platform.codeforces {
+        background: rgba(31, 138, 203, 0.2);
+        color: #1f8acb;
+      }
+      .platform.atcoder {
+        background: rgba(63, 127, 191, 0.2);
+        color: #3f7fbf;
+      }
+      .difficulty.easy {
+        color: #10b981;
+      }
+      .difficulty.medium {
+        color: #f59e0b;
+      }
+      .difficulty.hard {
+        color: #ef4444;
+      }
+      .tags {
+        margin-top: 10px;
+      }
+      .tag {
+        background: #4b5563;
+        color: #d1d5db;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        margin-right: 5px;
+      }
+      .filters {
+        background: #374151;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+      .filter-group {
+        margin: 10px 0;
+      }
+      .filter-group label {
+        display: block;
+        color: #d1d5db;
+        margin-bottom: 5px;
+        font-size: 14px;
+      }
+      .filter-group select {
+        background: #1f2937;
+        border: 1px solid #4b5563;
+        border-radius: 4px;
+        color: #fff;
+        padding: 8px;
+        width: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🏆 Top Problems API Test</h1>
+
+    <div class="test-section">
+      <h3>API Endpoint Tests</h3>
+      <button class="button" onclick="testBasicEndpoint()">
+        Test Basic Endpoint
+      </button>
+      <button class="button" onclick="testPlatformFilter()">
+        Test Platform Filter
+      </button>
+      <button class="button" onclick="testDifficultyFilter()">
+        Test Difficulty Filter
+      </button>
+      <button class="button" onclick="testCategoryFilter()">
+        Test Category Filter
+      </button>
+      <button class="button" onclick="testCombinedFilters()">
+        Test Combined Filters
+      </button>
+      <button class="button" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="filters" id="interactive-filters" style="display: none">
+      <h3>🔧 Interactive Filters</h3>
+      <div
+        style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 15px;
+        "
+      >
+        <div class="filter-group">
+          <label>Platform:</label>
+          <select id="platform-filter">
+            <option value="all">All Platforms</option>
+            <option value="leetcode">LeetCode</option>
+            <option value="codeforces">Codeforces</option>
+            <option value="atcoder">AtCoder</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Difficulty:</label>
+          <select id="difficulty-filter">
+            <option value="all">All Difficulties</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Category:</label>
+          <select id="category-filter">
+            <option value="all">All Categories</option>
+            <option value="classic">Classic Problems</option>
+            <option value="interview">Interview Prep</option>
+            <option value="contest">Contest Problems</option>
+            <option value="beginner">Beginner Friendly</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Limit:</label>
+          <select id="limit-filter">
+            <option value="10">10 Problems</option>
+            <option value="20">20 Problems</option>
+            <option value="50">50 Problems</option>
+          </select>
+        </div>
+      </div>
+      <button class="button" onclick="applyInteractiveFilters()">
+        Apply Filters
+      </button>
+      <button class="button" onclick="resetInteractiveFilters()">
+        Reset Filters
+      </button>
+    </div>
+
+    <div class="test-section">
+      <h3>Test Results</h3>
+      <div id="status">Ready to test top problems API...</div>
+    </div>
+
+    <div class="test-section">
+      <h3>Debug Log</h3>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div id="results-container"></div>
+
+    <script>
+      const log = document.getElementById("log");
+      const status = document.getElementById("status");
+      const resultsContainer = document.getElementById("results-container");
+
+      function addLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        log.textContent += `[${timestamp}] ${message}\n`;
+        log.scrollTop = log.scrollHeight;
+        console.log(message);
+      }
+
+      function setStatus(message) {
+        status.textContent = message;
+        addLog(`STATUS: ${message}`);
+      }
+
+      function clearResults() {
+        log.textContent = "";
+        resultsContainer.innerHTML = "";
+        setStatus("Cleared results");
+      }
+
+      function showInteractiveFilters() {
+        document.getElementById("interactive-filters").style.display = "block";
+      }
+
+      async function testBasicEndpoint() {
+        setStatus("🔍 Testing Basic Top Problems Endpoint...");
+
+        try {
+          const url = "http://localhost:5000/api/stats/top-problems";
+          addLog(`Making request to: ${url}`);
+
+          const response = await fetch(url);
+          addLog(`Response status: ${response.status} ${response.statusText}`);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          addLog(
+            `Response received with ${data.problems?.length || 0} problems`
+          );
+
+          if (data.problems && data.problems.length > 0) {
+            setStatus(
+              `✅ SUCCESS: Basic endpoint working! Found ${data.problems.length} problems`
+            );
+            displayProblems("Basic Endpoint Test", data);
+            showInteractiveFilters();
+          } else {
+            setStatus("⚠️ No problems returned from API");
+          }
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function testPlatformFilter() {
+        setStatus("🔍 Testing Platform Filters...");
+
+        try {
+          const platforms = ["leetcode", "codeforces", "atcoder"];
+          for (const platform of platforms) {
+            const url = `http://localhost:5000/api/stats/top-problems?platform=${platform}&limit=5`;
+            addLog(`Testing platform filter: ${platform}`);
+
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              addLog(
+                `${platform}: ${data.problems?.length || 0} problems found`
+              );
+              if (data.problems && data.problems.length > 0) {
+                const allFromPlatform = data.problems.every(
+                  (p) => p.platform === platform
+                );
+                addLog(
+                  `${platform}: All problems from correct platform: ${allFromPlatform}`
+                );
+              }
+            }
+          }
+          setStatus("✅ Platform filter test completed");
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function testDifficultyFilter() {
+        setStatus("🔍 Testing Difficulty Filters...");
+
+        try {
+          const difficulties = ["easy", "medium", "hard"];
+          for (const difficulty of difficulties) {
+            const url = `http://localhost:5000/api/stats/top-problems?difficulty=${difficulty}&limit=5`;
+            addLog(`Testing difficulty filter: ${difficulty}`);
+
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              addLog(
+                `${difficulty}: ${data.problems?.length || 0} problems found`
+              );
+              if (data.problems && data.problems.length > 0) {
+                const allCorrectDifficulty = data.problems.every(
+                  (p) =>
+                    p.difficulty?.toLowerCase() === difficulty.toLowerCase()
+                );
+                addLog(
+                  `${difficulty}: All problems have correct difficulty: ${allCorrectDifficulty}`
+                );
+              }
+            }
+          }
+          setStatus("✅ Difficulty filter test completed");
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function testCategoryFilter() {
+        setStatus("🔍 Testing Category Filters...");
+
+        try {
+          const categories = ["classic", "interview", "contest", "beginner"];
+          for (const category of categories) {
+            const url = `http://localhost:5000/api/stats/top-problems?category=${category}&limit=5`;
+            addLog(`Testing category filter: ${category}`);
+
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              addLog(
+                `${category}: ${data.problems?.length || 0} problems found`
+              );
+              if (data.problems && data.problems.length > 0) {
+                const hasCategory = data.problems.every(
+                  (p) => p.categories && p.categories.includes(category)
+                );
+                addLog(
+                  `${category}: All problems have correct category: ${hasCategory}`
+                );
+              }
+            }
+          }
+          setStatus("✅ Category filter test completed");
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function testCombinedFilters() {
+        setStatus("🔍 Testing Combined Filters...");
+
+        try {
+          const combinations = [
+            { platform: "leetcode", difficulty: "easy" },
+            { platform: "codeforces", category: "classic" },
+            { difficulty: "medium", category: "interview" },
+          ];
+
+          for (const combo of combinations) {
+            const params = new URLSearchParams(combo);
+            params.append("limit", "3");
+            const url = `http://localhost:5000/api/stats/top-problems?${params}`;
+            addLog(`Testing combined filters: ${JSON.stringify(combo)}`);
+
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              addLog(
+                `Combined ${JSON.stringify(combo)}: ${
+                  data.problems?.length || 0
+                } problems found`
+              );
+            }
+          }
+          setStatus("✅ Combined filter test completed");
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function applyInteractiveFilters() {
+        const platform = document.getElementById("platform-filter").value;
+        const difficulty = document.getElementById("difficulty-filter").value;
+        const category = document.getElementById("category-filter").value;
+        const limit = document.getElementById("limit-filter").value;
+
+        setStatus("🔍 Applying Interactive Filters...");
+
+        try {
+          const params = new URLSearchParams({
+            platform,
+            difficulty,
+            category,
+            limit,
+          });
+
+          const url = `http://localhost:5000/api/stats/top-problems?${params}`;
+          addLog(`Making filtered request: ${url}`);
+
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          addLog(`Filtered response: ${data.problems?.length || 0} problems`);
+
+          if (data.problems && data.problems.length > 0) {
+            setStatus(
+              `✅ SUCCESS: Found ${data.problems.length} filtered problems`
+            );
+            displayProblems("Interactive Filter Results", data);
+          } else {
+            setStatus("⚠️ No problems match your filter criteria");
+          }
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      function resetInteractiveFilters() {
+        document.getElementById("platform-filter").value = "all";
+        document.getElementById("difficulty-filter").value = "all";
+        document.getElementById("category-filter").value = "all";
+        document.getElementById("limit-filter").value = "10";
+        addLog("Interactive filters reset to defaults");
+      }
+
+      function displayProblems(testName, data) {
+        const resultDiv = document.createElement("div");
+        resultDiv.className = "test-section";
+        resultDiv.innerHTML = `
+                <h3>📊 ${testName}</h3>
+                <div style="background: #374151; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+                    <strong>Total Problems:</strong> ${
+                      data.total || data.problems?.length || 0
+                    }<br>
+                    <strong>Showing:</strong> ${
+                      data.showing || data.problems?.length || 0
+                    }<br>
+                    <strong>Filters Applied:</strong> ${JSON.stringify(
+                      data.filters || {},
+                      null,
+                      2
+                    )}
+                </div>
+                ${
+                  data.problems && data.problems.length > 0
+                    ? `
+                    <div>
+                        <h4>Problems Preview:</h4>
+                        ${data.problems
+                          .slice(0, 5)
+                          .map(
+                            (problem) => `
+                            <div class="problem-card">
+                                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 10px;">
+                                    <div>
+                                        <span class="platform ${
+                                          problem.platform
+                                        }">${problem.platform.toUpperCase()}</span>
+                                        <span class="difficulty ${problem.difficulty.toLowerCase()}">${
+                              problem.difficulty
+                            }</span>
+                                        ${
+                                          problem.rating
+                                            ? `<span style="color: #F59E0B;">⭐ ${problem.rating}</span>`
+                                            : ""
+                                        }
+                                    </div>
+                                    <a href="${
+                                      problem.url
+                                    }" target="_blank" style="color: #3B82F6; text-decoration: none; padding: 5px 10px; background: #1F2937; border-radius: 4px;">Solve</a>
+                                </div>
+                                <strong style="color: #fff;">${
+                                  problem.title
+                                }</strong><br>
+                                <div style="color: #9CA3AF; font-size: 12px; margin: 8px 0;">${
+                                  problem.description
+                                }</div>
+                                <div class="tags">
+                                    ${
+                                      problem.tags
+                                        ? problem.tags
+                                            .map(
+                                              (tag) =>
+                                                `<span class="tag">${tag}</span>`
+                                            )
+                                            .join("")
+                                        : ""
+                                    }
+                                </div>
+                                <div style="margin-top: 10px; color: #6B7280; font-size: 11px;">
+                                    ${problem.solveCount} solved • ${
+                              problem.acceptance
+                            } acceptance
+                                </div>
+                            </div>
+                        `
+                          )
+                          .join("")}
+                        ${
+                          data.problems.length > 5
+                            ? `<div style="color: #9CA3AF; margin-top: 10px;">... and ${
+                                data.problems.length - 5
+                              } more problems</div>`
+                            : ""
+                        }
+                    </div>
+                `
+                    : ""
+                }
+            `;
+        resultsContainer.appendChild(resultDiv);
+      }
+
+      // Initialize
+      addLog("Top Problems API test page loaded");
+      addLog('Click "Test Basic Endpoint" to start testing');
+    </script>
+  </body>
+</html>

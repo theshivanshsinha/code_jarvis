@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Problem History Filter Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: #fff;
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .button {
+        background: #3b82f6;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 10px 5px;
+      }
+      .button:hover {
+        background: #2563eb;
+      }
+      .button:disabled {
+        background: #6b7280;
+        cursor: not-allowed;
+      }
+      .test-section {
+        background: #1f2937;
+        border: 1px solid #374151;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+      }
+      .log {
+        background: #000;
+        color: #0f0;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .filter-result {
+        background: #374151;
+        border: 1px solid #4b5563;
+        border-radius: 6px;
+        padding: 10px;
+        margin: 5px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔧 Problem History Filter Test</h1>
+
+    <div class="test-section">
+      <h3>Filter Functionality Tests</h3>
+      <button class="button" onclick="testBasicFilter()">
+        Test Basic Filter
+      </button>
+      <button class="button" onclick="testPlatformFilter()">
+        Test Platform Filter
+      </button>
+      <button class="button" onclick="testDifficultyFilter()">
+        Test Difficulty Filter
+      </button>
+      <button class="button" onclick="testVerdictFilter()">
+        Test Verdict Filter
+      </button>
+      <button class="button" onclick="testTagsFilter()">
+        Test Tags Filter
+      </button>
+      <button class="button" onclick="testSortingFilter()">Test Sorting</button>
+      <button class="button" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="test-section">
+      <h3>Test Results</h3>
+      <div id="status">Ready to test filter functionality...</div>
+    </div>
+
+    <div class="test-section">
+      <h3>Debug Log</h3>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div id="results-container"></div>
+
+    <script>
+      const log = document.getElementById("log");
+      const status = document.getElementById("status");
+      const resultsContainer = document.getElementById("results-container");
+
+      function addLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        log.textContent += `[${timestamp}] ${message}\n`;
+        log.scrollTop = log.scrollHeight;
+        console.log(message);
+      }
+
+      function setStatus(message) {
+        status.textContent = message;
+        addLog(`STATUS: ${message}`);
+      }
+
+      function clearResults() {
+        log.textContent = "";
+        resultsContainer.innerHTML = "";
+        setStatus("Cleared results");
+      }
+
+      async function testBasicFilter() {
+        setStatus("🔍 Testing Basic Filter...");
+
+        try {
+          const url = "http://localhost:5000/api/stats/problems?limit=10";
+          addLog(`Making request to: ${url}`);
+
+          const response = await fetch(url);
+          addLog(`Response status: ${response.status} ${response.statusText}`);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          addLog(
+            `Response received with ${data.problems?.length || 0} problems`
+          );
+
+          if (data.problems && data.problems.length > 0) {
+            setStatus(
+              `✅ SUCCESS: Basic filter working! Found ${data.problems.length} problems`
+            );
+            displayResults("Basic Filter", data);
+          } else {
+            setStatus("⚠️ No problems returned from API");
+          }
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function testPlatformFilter() {
+        setStatus("🔍 Testing Platform Filter...");
+
+        try {
+          const platforms = ["codeforces", "leetcode", "atcoder"];
+          for (const platform of platforms) {
+            const url = `http://localhost:5000/api/stats/problems?platform=${platform}&limit=5`;
+            addLog(`Testing platform filter: ${platform}`);
+
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              addLog(
+                `${platform}: ${data.problems?.length || 0} problems found`
+              );
+              if (data.problems && data.problems.length > 0) {
+                const allFromPlatform = data.problems.every(
+                  (p) => p.platform === platform
+                );
+                addLog(
+                  `${platform}: All problems from correct platform: ${allFromPlatform}`
+                );
+              }
+            }
+          }
+          setStatus("✅ Platform filter test completed");
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function testDifficultyFilter() {
+        setStatus("🔍 Testing Difficulty Filter...");
+
+        try {
+          const difficulties = ["easy", "medium", "hard"];
+          for (const difficulty of difficulties) {
+            const url = `http://localhost:5000/api/stats/problems?difficulty=${difficulty}&limit=5`;
+            addLog(`Testing difficulty filter: ${difficulty}`);
+
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              addLog(
+                `${difficulty}: ${data.problems?.length || 0} problems found`
+              );
+              if (data.problems && data.problems.length > 0) {
+                const allCorrectDifficulty = data.problems.every(
+                  (p) =>
+                    p.difficulty?.toLowerCase() === difficulty.toLowerCase()
+                );
+                addLog(
+                  `${difficulty}: All problems have correct difficulty: ${allCorrectDifficulty}`
+                );
+              }
+            }
+          }
+          setStatus("✅ Difficulty filter test completed");
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function testVerdictFilter() {
+        setStatus("🔍 Testing Verdict Filter...");
+
+        try {
+          const verdicts = ["AC", "WA", "TLE"];
+          for (const verdict of verdicts) {
+            const url = `http://localhost:5000/api/stats/problems?verdict=${verdict}&limit=5`;
+            addLog(`Testing verdict filter: ${verdict}`);
+
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              addLog(
+                `${verdict}: ${data.problems?.length || 0} problems found`
+              );
+              if (data.problems && data.problems.length > 0) {
+                const verdictMatches = data.problems.every((p) => {
+                  const pVerdict = p.verdict?.toUpperCase();
+                  return verdict === "AC"
+                    ? ["OK", "AC", "ACCEPTED"].includes(pVerdict)
+                    : pVerdict === verdict;
+                });
+                addLog(
+                  `${verdict}: All problems have correct verdict: ${verdictMatches}`
+                );
+              }
+            }
+          }
+          setStatus("✅ Verdict filter test completed");
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function testTagsFilter() {
+        setStatus("🔍 Testing Tags Filter...");
+
+        try {
+          const tags = ["dp", "graphs", "implementation"];
+          for (const tag of tags) {
+            const url = `http://localhost:5000/api/stats/problems?tags=${tag}&limit=5`;
+            addLog(`Testing tags filter: ${tag}`);
+
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              addLog(`${tag}: ${data.problems?.length || 0} problems found`);
+              if (data.problems && data.problems.length > 0) {
+                const hasTag = data.problems.every(
+                  (p) =>
+                    p.tags &&
+                    p.tags.some((t) =>
+                      t.toLowerCase().includes(tag.toLowerCase())
+                    )
+                );
+                addLog(`${tag}: All problems contain tag: ${hasTag}`);
+              }
+            }
+          }
+          setStatus("✅ Tags filter test completed");
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      async function testSortingFilter() {
+        setStatus("🔍 Testing Sorting Filter...");
+
+        try {
+          const sortOptions = [
+            { sort: "date", order: "desc" },
+            { sort: "date", order: "asc" },
+            { sort: "difficulty", order: "desc" },
+            { sort: "platform", order: "asc" },
+          ];
+
+          for (const { sort, order } of sortOptions) {
+            const url = `http://localhost:5000/api/stats/problems?sort=${sort}&order=${order}&limit=10`;
+            addLog(`Testing sort: ${sort} ${order}`);
+
+            const response = await fetch(url);
+            if (response.ok) {
+              const data = await response.json();
+              addLog(
+                `${sort} ${order}: ${data.problems?.length || 0} problems found`
+              );
+              if (data.problems && data.problems.length > 1) {
+                addLog(
+                  `First problem ${sort}: ${data.problems[0][sort] || "N/A"}`
+                );
+                addLog(
+                  `Last problem ${sort}: ${
+                    data.problems[data.problems.length - 1][sort] || "N/A"
+                  }`
+                );
+              }
+            }
+          }
+          setStatus("✅ Sorting filter test completed");
+        } catch (error) {
+          setStatus(`❌ ERROR: ${error.message}`);
+          addLog(`ERROR: ${error.message}`);
+        }
+      }
+
+      function displayResults(testName, data) {
+        const resultDiv = document.createElement("div");
+        resultDiv.className = "test-section";
+        resultDiv.innerHTML = `
+                <h3>📊 ${testName} Results</h3>
+                <div class="filter-result">
+                    <strong>Total Problems:</strong> ${
+                      data.total || data.problems?.length || 0
+                    }<br>
+                    <strong>Showing:</strong> ${
+                      data.showing || data.problems?.length || 0
+                    }<br>
+                    <strong>Filters Applied:</strong> ${JSON.stringify(
+                      data.filters || {},
+                      null,
+                      2
+                    )}
+                </div>
+                ${
+                  data.problems && data.problems.length > 0
+                    ? `
+                    <div>
+                        <h4>Sample Problems:</h4>
+                        ${data.problems
+                          .slice(0, 3)
+                          .map(
+                            (problem) => `
+                            <div class="filter-result">
+                                <strong>${
+                                  problem.title ||
+                                  problem.problemId ||
+                                  "Unknown"
+                                }</strong><br>
+                                Platform: ${problem.platform} | 
+                                Difficulty: ${problem.difficulty || "N/A"} | 
+                                Verdict: ${problem.verdict || "N/A"}<br>
+                                Tags: ${
+                                  problem.tags
+                                    ? problem.tags.join(", ")
+                                    : "None"
+                                }
+                            </div>
+                        `
+                          )
+                          .join("")}
+                    </div>
+                `
+                    : ""
+                }
+            `;
+        resultsContainer.appendChild(resultDiv);
+      }
+
+      // Initialize
+      addLog("Filter functionality test page loaded");
+      addLog("Click any test button to verify filter functionality");
+    </script>
+  </body>
+</html>
