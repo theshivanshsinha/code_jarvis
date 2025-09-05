@@ -1,0 +1,16 @@
+# Alternative deployment commands for Render
+
+# Option 1: Simple Python startup (RECOMMENDED)
+web: python render_start.py
+
+# Option 2: Gunicorn with config file
+# web: gunicorn app:app -c gunicorn.conf.py
+
+# Option 3: Gunicorn with inline config
+# web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+
+# Option 4: Direct app.py execution
+# web: python app.py
+
+# Option 5: Alternative startup script
+# web: python startup.py
