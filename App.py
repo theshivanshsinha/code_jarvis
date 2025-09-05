@@ -11,6 +11,11 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
+# Ensure PORT is properly set
+port = int(os.environ.get("PORT", 5000))
+print(f"🔗 Port configured: {port}")
+print(f"🌐 Environment: {os.environ.get('FLASK_ENV', 'production')}")
+
 try:
     # Import and create the Flask application
     from backend import create_app
@@ -23,6 +28,7 @@ try:
     app.config['ENV'] = 'production'
     
     print("✅ CodeJarvis Backend initialized for production")
+    print(f"🚀 Ready to serve on port {port}")
     
 except Exception as e:
     print(f"❌ Failed to initialize backend: {str(e)}")
@@ -33,6 +39,6 @@ except Exception as e:
 # For gunicorn: this exposes the 'app' variable that gunicorn expects
 # Command: gunicorn app:app
 if __name__ == "__main__":
-    # For direct execution
-    port = int(os.environ.get("PORT", 5000))
+    # For direct execution (fallback)
+    print(f"🔧 Starting Flask development server on port {port}")
     app.run(host="0.0.0.0", port=port, debug=False)
